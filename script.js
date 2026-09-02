@@ -1,4 +1,153 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+  /* ==========================================================================
+     WEB AUDIO SFX SYNTHESIZER (CLICK & HOVER SOUNDS)
+     ========================================================================== */
+  let audioCtx = null;
+  let soundEnabled = localStorage.getItem('portfolio-sound') !== 'false';
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playHoverSound() {
+    if (!soundEnabled) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(750, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.015, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.03);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.03);
+  }
+
+  function playClickSound() {
+    if (!soundEnabled) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(450, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.07);
+
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.07);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.07);
+  }
+
+  // Attach hover & click sounds to interactive elements
+  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block');
+  interactiveElements.forEach((el) => {
+    el.addEventListener('mouseenter', playHoverSound);
+    el.addEventListener('click', playClickSound);
+  });
+
+  // Sound Toggle Control
+  const soundBtns = document.querySelectorAll('.sound-toggle-btn');
+  
+  function updateSoundUI() {
+    soundBtns.forEach((btn) => {
+      const iconOn = btn.querySelector('.sound-icon-on');
+      const iconOff = btn.querySelector('.sound-icon-off');
+
+      if (soundEnabled) {
+        btn.classList.remove('muted');
+        if (iconOn) iconOn.style.display = 'block';
+        if (iconOff) iconOff.style.display = 'none';
+      } else {
+        btn.classList.add('muted');
+        if (iconOn) iconOn.style.display = 'none';
+        if (iconOff) iconOff.style.display = 'block';
+      }
+    });
+  }
+
+  soundBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('portfolio-sound', soundEnabled);
+      updateSoundUI();
+      if (soundEnabled) playClickSound();
+    });
+  });
+
+  updateSoundUI();
+
+  /* ==========================================================================
+     SEGMENTED THEME SWITCHER (SYSTEM / LIGHT / DARK)
+     ========================================================================== */
+  const themeOpts = document.querySelectorAll('.theme-opt');
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function getStoredTheme() {
+    return localStorage.getItem('portfolio-theme') || 'system';
+  }
+
+  function applyTheme(mode) {
+    const isDark = mode === 'dark' || (mode === 'system' && mediaQuery.matches);
+
+    if (isDark) {
+      document.body.classList.remove('light-theme');
+    } else {
+      document.body.classList.add('light-theme');
+    }
+
+    // Update active pill UI state
+    themeOpts.forEach((btn) => {
+      if (btn.getAttribute('data-theme') === mode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Handle system preference changes when set to 'system'
+  mediaQuery.addEventListener('change', () => {
+    if (getStoredTheme() === 'system') {
+      applyTheme('system');
+    }
+  });
+
+  // Switcher option clicks
+  themeOpts.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const selected = btn.getAttribute('data-theme');
+      localStorage.setItem('portfolio-theme', selected);
+      applyTheme(selected);
+    });
+  });
+
+  // Initialize Theme on load
+  applyTheme(getStoredTheme());
+
   /* ---------- Mobile Menu ---------- */
   const overlay = document.getElementById('mobile-overlay');
   const openBtn = document.getElementById('menu-open');
