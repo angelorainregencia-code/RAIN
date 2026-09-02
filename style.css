@@ -1,9 +1,9 @@
 :root {
-  /* Dark Theme Palette (Default) */
+  /* Pure Seamless Black Palette (Dark Mode Default) */
   --bg: #08090a;
-  --bg-raised: #0c0e11;
-  --card: #111318;
-  --card-hover: #151821;
+  --bg-raised: transparent;
+  --card: #08090a;
+  --card-hover: #0d0f12;
   --border: #1f2430;
   --border-strong: #2c3242;
 
@@ -205,21 +205,17 @@ a { color: inherit; text-decoration: none; }
 
 .header-links a:hover { color: var(--cyan); border-color: var(--cyan); }
 
-/* ==========================================================================
-   UI CONTROLS: THEME PILL & SOUND SWITCHER
-   ========================================================================== */
-
+/* Controls Group: Theme Pill Switcher & Sound Toggle */
 .controls-group {
   display: flex;
   align-items: center;
   gap: 0.6rem;
 }
 
-/* Pill Container for System / Light / Dark */
 .theme-switcher-pill {
   display: inline-flex;
   align-items: center;
-  background: var(--bg-raised);
+  background: var(--bg);
   border: 1px solid var(--border-strong);
   border-radius: 9999px;
   padding: 3px;
@@ -255,7 +251,6 @@ body.light-theme .theme-opt.active {
   color: var(--cyan);
 }
 
-/* Circular Speaker Button */
 .sound-toggle-btn {
   display: inline-flex;
   align-items: center;
@@ -263,7 +258,7 @@ body.light-theme .theme-opt.active {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--bg-raised);
+  background: var(--bg);
   border: 1px solid var(--border-strong);
   color: var(--ink-dim);
   cursor: pointer;
@@ -286,7 +281,7 @@ body.light-theme .theme-opt.active {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: var(--bg-raised);
+  background: var(--bg);
   border: 1px solid var(--border-strong);
   color: var(--ink);
   padding: 0.45rem 0.75rem;
@@ -414,10 +409,11 @@ body.light-theme .theme-opt.active {
   }
 }
 
+/* Metric Blocks: Pure Black / Seamless Background */
 .metric-block {
   padding: 1.25rem 1rem;
   border-right: 1px solid var(--border);
-  background: var(--bg-raised);
+  background: transparent;
 }
 
 .metric-block:last-child {
@@ -478,10 +474,7 @@ body.light-theme .theme-opt.active {
   line-height: 1.6;
 }
 
-/* ==========================================================================
-   FEATURED PROJECTS (BOSSROD GRID LAYOUT)
-   ========================================================================== */
-
+/* Featured Projects Grid */
 .projects-grid-bossrod {
   display: grid;
   grid-template-columns: 1fr;
@@ -603,8 +596,9 @@ body.light-theme .theme-opt.active {
   .stack-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* Stack Blocks: Pure Black / Seamless Background */
 .stack-block {
-  background: var(--bg-raised);
+  background: transparent;
   border: 1px solid var(--border);
   border-left: 2px solid var(--cyan);
   padding: 1.25rem 1.4rem;
@@ -659,7 +653,7 @@ body.light-theme .theme-opt.active {
   gap: 0.5rem;
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-raised);
+  background: var(--bg);
 }
 
 .terminal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }

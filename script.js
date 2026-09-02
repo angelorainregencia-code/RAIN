@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ==========================================================================
-     WEB AUDIO SFX SYNTHESIZER (CLICK & HOVER SOUNDS)
+     WEB AUDIO SFX SYNTHESIZER (BOOSTED CLICK & HOVER VOLUMES)
      ========================================================================== */
   let audioCtx = null;
   let soundEnabled = localStorage.getItem('portfolio-sound') !== 'false';
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return audioCtx;
   }
 
+  // LOUDER HOVER SOUND
   function playHoverSound() {
     if (!soundEnabled) return;
     const ctx = getAudioContext();
@@ -26,18 +27,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const gain = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(750, ctx.currentTime);
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
 
-    gain.gain.setValueAtTime(0.015, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.03);
+    // Boosted volume gain: 0.08
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start();
-    osc.stop(ctx.currentTime + 0.03);
+    osc.stop(ctx.currentTime + 0.04);
   }
 
+  // LOUDER CLICK SOUND
   function playClickSound() {
     if (!soundEnabled) return;
     const ctx = getAudioContext();
@@ -47,27 +50,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const gain = ctx.createGain();
 
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(450, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.07);
+    osc.frequency.setValueAtTime(500, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.08);
 
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.07);
+    // Boosted volume gain: 0.30
+    gain.gain.setValueAtTime(0.30, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start();
-    osc.stop(ctx.currentTime + 0.07);
+    osc.stop(ctx.currentTime + 0.08);
   }
 
   // Attach hover & click sounds to interactive elements
-  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block');
+  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block, .theme-opt');
   interactiveElements.forEach((el) => {
     el.addEventListener('mouseenter', playHoverSound);
     el.addEventListener('click', playClickSound);
   });
 
-  // Sound Toggle Control
+  // Sound Toggle Control Buttons
   const soundBtns = document.querySelectorAll('.sound-toggle-btn');
   
   function updateSoundUI() {
@@ -100,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSoundUI();
 
   /* ==========================================================================
-     SEGMENTED THEME SWITCHER (SYSTEM / LIGHT / DARK)
+     SEGMENTED THEME SWITCHER WITH IMMEDIATE COLOR TRANSITIONS
      ========================================================================== */
   const themeOpts = document.querySelectorAll('.theme-opt');
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -112,13 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyTheme(mode) {
     const isDark = mode === 'dark' || (mode === 'system' && mediaQuery.matches);
 
+    // Toggle body class to switch CSS variable colors instantly
     if (isDark) {
       document.body.classList.remove('light-theme');
     } else {
       document.body.classList.add('light-theme');
     }
 
-    // Update active pill UI state
+    // Update active state across desktop & mobile segmented pill switches
     themeOpts.forEach((btn) => {
       if (btn.getAttribute('data-theme') === mode) {
         btn.classList.add('active');
@@ -128,14 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Handle system preference changes when set to 'system'
+  // Automatically adapt if user selects System Mode and changes OS color settings
   mediaQuery.addEventListener('change', () => {
     if (getStoredTheme() === 'system') {
       applyTheme('system');
     }
   });
 
-  // Switcher option clicks
+  // Theme Pill Option Clicks
   themeOpts.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -145,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Initialize Theme on load
+  // Initialize Theme on Page Load
   applyTheme(getStoredTheme());
 
   /* ---------- Mobile Menu ---------- */
