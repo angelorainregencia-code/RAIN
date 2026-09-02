@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Attach hover & click sounds to interactive elements
-  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block, .theme-opt');
+  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block, .theme-opt, .about-img-wrapper');
   interactiveElements.forEach((el) => {
     el.addEventListener('mouseenter', playHoverSound);
     el.addEventListener('click', playClickSound);
