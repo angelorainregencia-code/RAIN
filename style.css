@@ -1,9 +1,13 @@
+/* ==========================================================================
+   RAIN REGENCIA — Tactical Cyber-Executive
+   Dark is the default; [data-theme="light"] re-maps the same tokens.
+   ========================================================================== */
+
 :root {
-  /* Pure Seamless Black Palette (Dark Mode Default) */
   --bg: #08090a;
-  --bg-raised: transparent;
-  --card: #08090a;
-  --card-hover: #0d0f12;
+  --bg-raised: #0c0e11;
+  --card: #111318;
+  --card-hover: #151821;
   --border: #1f2430;
   --border-strong: #2c3242;
 
@@ -16,31 +20,44 @@
   --crimson: #ff2e63;
   --crimson-dim: rgba(255, 46, 99, 0.14);
 
+  --pill-bg: #161820;
+  --pill-border: #232836;
+  --canvas-opacity: 1;
+
   --font-display: 'Syne', 'Inter', sans-serif;
   --font-mono: 'Space Mono', 'JetBrains Mono', ui-monospace, monospace;
 
   --measure: 72rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-snap: cubic-bezier(0.65, 0, 0.35, 1);
+
+  color-scheme: dark;
 }
 
-/* Light Theme Variable Overrides */
-body.light-theme {
-  --bg: #f8fafc;
+/* Light palette. The cyan is darkened to a teal so it stays readable as
+   text on a light background (#00f0ff on white is ~1.3:1). */
+:root[data-theme="light"] {
+  --bg: #f4f6f9;
   --bg-raised: #ffffff;
   --card: #ffffff;
-  --card-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --card-hover: #eef2f7;
+  --border: #dde2ea;
+  --border-strong: #bfc7d4;
 
-  --ink: #0f172a;
-  --ink-dim: #475569;
-  --ink-faint: #94a3b8;
+  --ink: #0b0d12;
+  --ink-dim: #454d5e;
+  --ink-faint: #667085;
 
-  --cyan: #0284c7;
-  --cyan-dim: rgba(2, 132, 199, 0.12);
-  --crimson: #e11d48;
-  --crimson-dim: rgba(225, 29, 72, 0.12);
+  --cyan: #007a87;
+  --cyan-dim: rgba(0, 122, 135, 0.12);
+  --crimson: #d6153f;
+  --crimson-dim: rgba(214, 21, 63, 0.1);
+
+  --pill-bg: #eef1f6;
+  --pill-border: #d5dbe5;
+  --canvas-opacity: 1;
+
+  color-scheme: light;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,35 +71,52 @@ body {
   font-family: var(--font-mono);
   font-size: 15px;
   line-height: 1.6;
-  background: var(--bg);
+  /* Transparent on purpose: <html> already paints var(--bg). An opaque body
+     (it is position: relative) would paint over the fixed background layers. */
+  background: transparent;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   position: relative;
-  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
 }
 
-#color-bends-canvas {
+/* Side Rays background (React Bits). Fixed behind everything; the script
+   listens for the pointer on window, so this layer never blocks clicks. */
+.rays-container {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
   z-index: -2;
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0.65;
-  transition: opacity 0.3s var(--ease-out), filter 0.3s var(--ease-out);
+  opacity: var(--canvas-opacity);
+  transition: opacity 0.5s ease;
 }
 
-body.light-theme #color-bends-canvas {
-  opacity: 0.2;
-  filter: invert(1) hue-rotate(180deg);
+.side-rays__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
+/* Rays are light, not lines, so they stay soft behind text; ease off a little
+   more on phones where the beams cover most of the screen. */
+@media (max-width: 767px) {
+  .rays-container { opacity: calc(var(--canvas-opacity) * 0.7); }
+}
+
+/* Soft edge vignette over the rays so the light recedes toward the
+   screen edges and text near them stays easy to read. */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, transparent 0%, var(--bg) 85%);
+  background: radial-gradient(
+    ellipse 95% 80% at 50% 45%,
+    transparent 40%,
+    color-mix(in srgb, var(--bg) 80%, transparent) 100%
+  );
   pointer-events: none;
 }
 
@@ -129,6 +163,11 @@ a { color: inherit; text-decoration: none; }
   background: var(--border);
 }
 
+/* ==========================================================================
+   STATUS BAR
+   Compact (status + MENU) below 1080px; full links + controls above it.
+   ========================================================================== */
+
 .status-bar {
   position: sticky;
   top: 0;
@@ -136,13 +175,13 @@ a { color: inherit; text-decoration: none; }
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(10px);
-  transition: background-color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
 }
 
 .status-bar .wrap {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   padding-block: 0.9rem;
 }
 
@@ -150,11 +189,17 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  min-width: 0;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.35;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--ink-dim);
+}
+
+@media (min-width: 480px) {
+  .status-live { font-size: 11px; letter-spacing: 0.08em; }
 }
 
 .status-live .pulse {
@@ -183,6 +228,13 @@ a { color: inherit; text-decoration: none; }
 
 .status-live strong { color: var(--ink); font-weight: 400; }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
 .header-links {
   display: none;
   align-items: center;
@@ -194,10 +246,6 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink-dim);
 }
 
-@media (min-width: 700px) {
-  .header-links { display: flex; }
-}
-
 .header-links a {
   transition: color 0.2s var(--ease-out);
   border-bottom: 1px solid transparent;
@@ -205,91 +253,87 @@ a { color: inherit; text-decoration: none; }
 
 .header-links a:hover { color: var(--cyan); border-color: var(--cyan); }
 
-/* Controls Group: Theme Switcher Pill & Sound Toggle */
-.controls-group {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.theme-switcher-pill {
-  display: inline-flex;
-  align-items: center;
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: 9999px;
-  padding: 3px;
-  gap: 2px;
-}
-
-.theme-opt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: all 0.2s var(--ease-out);
-}
-
-.theme-opt:hover {
-  color: var(--ink);
-}
-
-.theme-opt.active {
-  background: var(--border-strong);
-  color: var(--cyan);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-body.light-theme .theme-opt.active {
-  background: #e2e8f0;
-  color: var(--cyan);
-}
-
-.sound-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  color: var(--ink-dim);
-  cursor: pointer;
-  transition: all 0.2s var(--ease-out);
-}
-
-.sound-toggle-btn:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-}
-
-.sound-toggle-btn.muted {
-  color: var(--ink-faint);
-  opacity: 0.6;
-}
-
 .menu-btn {
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: var(--bg);
+  background: none;
   border: 1px solid var(--border-strong);
   color: var(--ink);
   padding: 0.45rem 0.75rem;
   cursor: pointer;
+  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
 }
 
-@media (min-width: 700px) { .menu-btn { display: none; } }
+.menu-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 
+/* ---------- theme switch + sound button ---------- */
+.control-cluster {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.control-cluster--mobile { display: flex; }
+
+.theme-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+}
+
+.theme-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.theme-btn:hover { color: var(--ink); }
+
+.theme-btn[aria-pressed="true"] {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+}
+
+.sound-toggle-btn {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+}
+
+.sound-toggle-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+
+.sound-toggle-btn .icon-sound-off { display: none; }
+.sound-toggle-btn[aria-pressed="true"] .icon-sound-on { display: none; }
+.sound-toggle-btn[aria-pressed="true"] .icon-sound-off { display: block; }
+
+@media (min-width: 1080px) {
+  .header-links { display: flex; }
+  .control-cluster { display: flex; }
+  .menu-btn { display: none; }
+}
+
+/* ---------- mobile overlay ---------- */
 .mobile-overlay {
   position: fixed;
   inset: 0;
@@ -299,9 +343,15 @@ body.light-theme .theme-opt.active {
   display: none;
   flex-direction: column;
   gap: 2rem;
+  overflow-y: auto;
 }
 
 .mobile-overlay.open { display: flex; }
+
+@media (min-width: 1080px) {
+  .mobile-overlay,
+  .mobile-overlay.open { display: none; }
+}
 
 .mobile-overlay-top { display: flex; justify-content: space-between; align-items: center; }
 
@@ -314,6 +364,13 @@ body.light-theme .theme-opt.active {
   letter-spacing: 0.06em;
   font-size: 15px;
 }
+
+.mobile-nav a { transition: color 0.2s var(--ease-out); }
+.mobile-nav a:hover { color: var(--cyan); }
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
 
 .hero {
   position: relative;
@@ -348,8 +405,25 @@ body.light-theme .theme-opt.active {
   height: auto;
   max-height: 380px;
   object-fit: cover;
+  filter: none;
   border-radius: 8px;
   border: 1px solid var(--border-strong);
+}
+
+.portrait-fallback {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 380px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--cyan);
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
 }
 
 .hero-title-large {
@@ -359,7 +433,6 @@ body.light-theme .theme-opt.active {
   letter-spacing: -0.03em;
   line-height: 1.05;
   margin-bottom: 1.5rem;
-  color: var(--ink);
 }
 
 .hero-sub {
@@ -412,7 +485,6 @@ body.light-theme .theme-opt.active {
 .metric-block {
   padding: 1.25rem 1rem;
   border-right: 1px solid var(--border);
-  background: transparent;
 }
 
 .metric-block:last-child {
@@ -444,6 +516,10 @@ body.light-theme .theme-opt.active {
   color: var(--ink-faint);
 }
 
+/* ==========================================================================
+   SECTION SHELL
+   ========================================================================== */
+
 .section {
   padding: 4.5rem 0;
   border-bottom: 1px solid var(--border);
@@ -455,14 +531,18 @@ body.light-theme .theme-opt.active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 0.5rem;
 }
+
+.section-head-top .index-tag { flex: 1; min-width: 0; }
 
 .section-counter {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--ink-faint);
   letter-spacing: 0.1em;
+  white-space: nowrap;
 }
 
 .section-subtext {
@@ -473,7 +553,19 @@ body.light-theme .theme-opt.active {
   line-height: 1.6;
 }
 
-/* Featured Projects Grid */
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin-top: 0.6rem;
+}
+
+/* ==========================================================================
+   01 — FEATURED PROJECTS (hairline grid)
+   ========================================================================== */
+
 .projects-grid-bossrod {
   display: grid;
   grid-template-columns: 1fr;
@@ -494,7 +586,7 @@ body.light-theme .theme-opt.active {
   padding: 2.25rem 1.75rem 2rem;
   display: flex;
   flex-direction: column;
-  transition: background 0.25s var(--ease-out), border-color 0.25s var(--ease-out);
+  transition: background 0.25s var(--ease-out);
   text-decoration: none;
   color: inherit;
 }
@@ -510,10 +602,11 @@ body.light-theme .theme-opt.active {
   margin-bottom: 1.75rem;
 }
 
+/* Logo tile stays dark in both themes so the logo artwork never loses contrast. */
 .card-logo-box {
   width: 54px;
   height: 54px;
-  background: var(--bg);
+  background: #0d0e12;
   border: 1px solid var(--border-strong);
   display: flex;
   align-items: center;
@@ -579,11 +672,65 @@ body.light-theme .theme-opt.active {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.35rem 0.65rem;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
   color: var(--ink-dim);
   border-radius: 3px;
 }
+
+/* ==========================================================================
+   02 — CORE SKILLS (same hairline-grid language as the projects)
+   ========================================================================== */
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 2rem;
+}
+
+@media (min-width: 640px) {
+  .skills-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 980px) {
+  .skills-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.skill-card {
+  background: var(--card);
+  padding: 1.75rem 1.5rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.25s var(--ease-out);
+}
+
+.skill-card:hover { background: var(--card-hover); }
+
+.skill-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+}
+
+.skill-desc {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-dim);
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+/* ==========================================================================
+   03 — STACK
+   ========================================================================== */
 
 .stack-grid {
   display: grid;
@@ -596,7 +743,7 @@ body.light-theme .theme-opt.active {
 }
 
 .stack-block {
-  background: transparent;
+  background: var(--bg-raised);
   border: 1px solid var(--border);
   border-left: 2px solid var(--cyan);
   padding: 1.25rem 1.4rem;
@@ -640,69 +787,8 @@ body.light-theme .theme-opt.active {
 }
 
 /* ==========================================================================
-   SECTION 03: BEHIND THE SYSTEM & STUDIO
+   04 — CONTACT TERMINAL
    ========================================================================== */
-
-.about-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2.5rem;
-  align-items: center;
-  margin-top: 2rem;
-}
-
-@media (min-width: 860px) {
-  .about-grid {
-    grid-template-columns: 360px 1fr;
-    gap: 3.5rem;
-  }
-}
-
-.about-img-wrapper {
-  width: 100%;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg);
-}
-
-.about-img {
-  width: 100%;
-  height: 100%;
-  max-height: 420px;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.4s var(--ease-out);
-}
-
-.about-img-wrapper:hover .about-img {
-  transform: scale(1.03);
-}
-
-.about-heading {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin-bottom: 1.25rem;
-  line-height: 1.2;
-}
-
-.about-caption {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  line-height: 1.85;
-  color: var(--ink-dim);
-  margin-bottom: 1.75rem;
-}
-
-.about-meta-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
 
 .contact-terminal {
   background: var(--card);
@@ -716,7 +802,6 @@ body.light-theme .theme-opt.active {
   gap: 0.5rem;
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
 }
 
 .terminal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
@@ -727,7 +812,7 @@ body.light-theme .theme-opt.active {
   color: var(--ink-faint);
 }
 
-.terminal-body { padding: 1.75rem; background: var(--card); }
+.terminal-body { padding: 1.75rem; }
 
 .terminal-line {
   font-family: var(--font-mono);
@@ -815,6 +900,10 @@ footer {
   gap: 0.5rem;
 }
 
+/* ==========================================================================
+   SCROLL REVEAL
+   ========================================================================== */
+
 .reveal {
   opacity: 0;
   transform: translateY(16px);
@@ -822,3 +911,98 @@ footer {
 }
 
 .reveal.in-view { opacity: 1; transform: translateY(0); }
+
+/* Cards need the reveal AND their hover background in one transition list,
+   otherwise .reveal (declared last) would cancel the hover fade. */
+.card-bossrod.reveal,
+.skill-card.reveal {
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out),
+    background 0.25s var(--ease-out);
+}
+
+/* Brief crossfade when the theme changes (class is added/removed by script.js). */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease !important;
+}
+
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+
+a:focus-visible, button:focus-visible {
+  outline: 1.5px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .status-live .pulse::after { animation: none; }
+  .terminal-line .caret { animation: none; }
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after { transition: none !important; }
+}
+
+
+/* ==========================================================================
+   03 — BEHIND THE SYSTEM & STUDIO
+   ========================================================================== */
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+@media (min-width: 900px) {
+  .studio-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 4rem;
+  }
+}
+
+.studio-photo {
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.studio-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.studio-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.3rem, 2.3vw, 2rem);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.5rem;
+}
+
+.studio-text {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--ink-dim);
+  max-width: 40rem;
+  margin-bottom: 1.75rem;
+}

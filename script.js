@@ -1,157 +1,220 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ==========================================================================
-     WEB AUDIO SFX SYNTHESIZER (BOOSTED CLICK & HOVER VOLUMES)
+     SOUND ENGINE  (Web Audio API — every sound is synthesized, no audio files)
+     - Stays silent until the visitor's first click / tap / keypress, because
+       browsers refuse to start audio before a user gesture.
+     - Hover ticks only run on devices with a real hover pointer (not touch).
+     - The mute choice is remembered between visits.
      ========================================================================== */
-  let audioCtx = null;
-  let soundEnabled = localStorage.getItem('portfolio-sound') !== 'false';
+  const Sound = (() => {
+    const KEY = 'site-sound';
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    let ctx = null;
+    let master = null;
+    let unlocked = false;
+    let muted = false;
+    let lastHover = 0;
+    let lastSection = 0;
 
-  function getAudioContext() {
-    if (!audioCtx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) audioCtx = new AudioContext();
+    try { muted = localStorage.getItem(KEY) === 'off'; } catch (e) {}
+
+    function unlock() {
+      if (unlocked) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.7;
+      master.connect(ctx.destination);
+      unlocked = true;
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
+
+    ['pointerdown', 'keydown', 'touchstart'].forEach((evt) =>
+      window.addEventListener(evt, unlock, { capture: true, passive: true })
+    );
+
+    function tone({ freq, to, type = 'sine', dur = 0.08, gain = 0.06, delay = 0 }) {
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const t0 = ctx.currentTime + delay;
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      if (to) osc.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+      env.gain.setValueAtTime(0.0001, t0);
+      env.gain.exponentialRampToValueAtTime(gain, t0 + 0.006);
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(env);
+      env.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.03);
     }
-    return audioCtx;
-  }
 
-  // LOUDER HOVER SOUND
-  function playHoverSound() {
-    if (!soundEnabled) return;
-    const ctx = getAudioContext();
-    if (!ctx) return;
+    const library = {
+      click:   () => tone({ freq: 720, to: 520, type: 'triangle', dur: 0.07, gain: 0.07 }),
+      hover:   () => tone({ freq: 1500, type: 'sine', dur: 0.03, gain: 0.018 }),
+      section: () => {
+        tone({ freq: 330, type: 'sine', dur: 0.12, gain: 0.04 });
+        tone({ freq: 495, type: 'sine', dur: 0.14, gain: 0.03, delay: 0.05 });
+      },
+      open:    () => tone({ freq: 380, to: 760, type: 'triangle', dur: 0.12, gain: 0.06 }),
+      close:   () => tone({ freq: 760, to: 380, type: 'triangle', dur: 0.12, gain: 0.06 }),
+      theme:   () => {
+        tone({ freq: 520, to: 780, type: 'sine', dur: 0.1, gain: 0.06 });
+        tone({ freq: 780, to: 1040, type: 'sine', dur: 0.12, gain: 0.04, delay: 0.07 });
+      },
+      success: () => {
+        tone({ freq: 660, type: 'triangle', dur: 0.09, gain: 0.07 });
+        tone({ freq: 990, type: 'triangle', dur: 0.16, gain: 0.07, delay: 0.08 });
+      },
+      on:      () => {
+        tone({ freq: 500, type: 'triangle', dur: 0.08, gain: 0.06 });
+        tone({ freq: 750, type: 'triangle', dur: 0.12, gain: 0.06, delay: 0.07 });
+      },
+      off:     () => {
+        tone({ freq: 750, type: 'triangle', dur: 0.08, gain: 0.06 });
+        tone({ freq: 500, type: 'triangle', dur: 0.12, gain: 0.05, delay: 0.07 });
+      }
+    };
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    function play(name, force = false) {
+      if (!unlocked || (muted && !force)) return;
+      const now = performance.now();
+      if (name === 'hover') {
+        if (!canHover || now - lastHover < 70) return;
+        lastHover = now;
+      }
+      if (name === 'section') {
+        if (now - lastSection < 350) return;
+        lastSection = now;
+      }
+      if (library[name]) library[name]();
+    }
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    function syncButtons() {
+      document.querySelectorAll('.sound-toggle-btn').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(muted));
+        btn.setAttribute('aria-label', muted ? 'Unmute interface sounds' : 'Mute interface sounds');
+      });
+    }
 
-    // Boosted volume gain: 0.08
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
+    function setMuted(next) {
+      muted = next;
+      try { localStorage.setItem(KEY, muted ? 'off' : 'on'); } catch (e) {}
+      syncButtons();
+    }
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    syncButtons();
 
-    osc.start();
-    osc.stop(ctx.currentTime + 0.04);
-  }
+    return { play, setMuted, isMuted: () => muted };
+  })();
 
-  // LOUDER CLICK SOUND
-  function playClickSound() {
-    if (!soundEnabled) return;
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(500, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.08);
-
-    // Boosted volume gain: 0.30
-    gain.gain.setValueAtTime(0.30, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 0.08);
-  }
-
-  // Attach hover & click sounds to interactive elements
-  const interactiveElements = document.querySelectorAll('a, button, .card-bossrod, .metric-block, .theme-opt, .about-img-wrapper');
-  interactiveElements.forEach((el) => {
-    el.addEventListener('mouseenter', playHoverSound);
-    el.addEventListener('click', playClickSound);
-  });
-
-  // Sound Toggle Control Buttons
-  const soundBtns = document.querySelectorAll('.sound-toggle-btn');
-  
-  function updateSoundUI() {
-    soundBtns.forEach((btn) => {
-      const iconOn = btn.querySelector('.sound-icon-on');
-      const iconOff = btn.querySelector('.sound-icon-off');
-
-      if (soundEnabled) {
-        btn.classList.remove('muted');
-        if (iconOn) iconOn.style.display = 'block';
-        if (iconOff) iconOff.style.display = 'none';
+  /* ---------- Sound toggle buttons (header + mobile menu) ---------- */
+  document.querySelectorAll('.sound-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (Sound.isMuted()) {
+        Sound.setMuted(false);
+        Sound.play('on');
       } else {
-        btn.classList.add('muted');
-        if (iconOn) iconOn.style.display = 'none';
-        if (iconOff) iconOff.style.display = 'block';
+        Sound.play('off');
+        Sound.setMuted(true);
       }
     });
-  }
-
-  soundBtns.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      soundEnabled = !soundEnabled;
-      localStorage.setItem('portfolio-sound', soundEnabled);
-      updateSoundUI();
-      if (soundEnabled) playClickSound();
-    });
   });
 
-  updateSoundUI();
+  /* ---------- Click sound for every link / button (those with their own sound are skipped) ---------- */
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('a, button, [role="button"]');
+    if (!el) return;
+    if (el.matches('[data-theme-choice], .sound-toggle-btn, #copy-email, #menu-open, #menu-close')) return;
+    Sound.play('click');
+  });
+
+  /* ---------- Hover tick on interactive elements ---------- */
+  let hoverTarget = null;
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('a, button, .card-bossrod, .skill-card');
+    if (!el || el === hoverTarget || el.contains(e.relatedTarget)) return;
+    hoverTarget = el;
+    Sound.play('hover');
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (hoverTarget && !hoverTarget.contains(e.relatedTarget)) hoverTarget = null;
+  });
+
+  /* ---------- Soft chime as you browse into a new section ---------- */
+  const sectionEls = document.querySelectorAll('section[id]');
+  if ('IntersectionObserver' in window && sectionEls.length) {
+    let activeSection = null;
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          if (activeSection !== null && activeSection !== entry.target.id) Sound.play('section');
+          activeSection = entry.target.id;
+        });
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0 }
+    );
+    sectionEls.forEach((el) => sectionObserver.observe(el));
+  }
 
   /* ==========================================================================
-     SEGMENTED THEME SWITCHER WITH IMMEDIATE COLOR TRANSITIONS
+     THEME  (system / light / dark)
+     The saved choice is applied by an inline script in <head> before first
+     paint; this keeps the buttons, the OS setting and storage in sync.
      ========================================================================== */
-  const themeOpts = document.querySelectorAll('.theme-opt');
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const Theme = (() => {
+    const KEY = 'site-theme';
+    const root = document.documentElement;
+    const systemQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let fadeTimer = null;
 
-  function getStoredTheme() {
-    return localStorage.getItem('portfolio-theme') || 'system';
-  }
-
-  function applyTheme(mode) {
-    const isDark = mode === 'dark' || (mode === 'system' && mediaQuery.matches);
-
-    // Toggle body class to switch CSS variable colors instantly
-    if (isDark) {
-      document.body.classList.remove('light-theme');
-    } else {
-      document.body.classList.add('light-theme');
+    function saved() {
+      try { return localStorage.getItem(KEY) || 'system'; } catch (e) { return 'system'; }
     }
 
-    // Update active state across desktop & mobile segmented pill switches
-    themeOpts.forEach((btn) => {
-      if (btn.getAttribute('data-theme') === mode) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
+    function resolve(choice) {
+      if (choice === 'light' || choice === 'dark') return choice;
+      return systemQuery.matches ? 'light' : 'dark';
+    }
+
+    function apply(choice, { animate = false, persist = true } = {}) {
+      if (animate && !reducedMotion) {
+        root.classList.add('theme-transition');
+        clearTimeout(fadeTimer);
+        fadeTimer = setTimeout(() => root.classList.remove('theme-transition'), 500);
       }
-    });
-  }
-
-  // Automatically adapt if user selects System Mode and changes OS color settings
-  mediaQuery.addEventListener('change', () => {
-    if (getStoredTheme() === 'system') {
-      applyTheme('system');
+      root.setAttribute('data-theme', resolve(choice));
+      document.dispatchEvent(new CustomEvent('themechange', { detail: { theme: resolve(choice) } }));
+      if (persist) {
+        try { localStorage.setItem(KEY, choice); } catch (e) {}
+      }
+      document.querySelectorAll('[data-theme-choice]').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.themeChoice === choice));
+      });
     }
-  });
 
-  // Theme Pill Option Clicks
-  themeOpts.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const selected = btn.getAttribute('data-theme');
-      localStorage.setItem('portfolio-theme', selected);
-      applyTheme(selected);
+    function onSystemChange() {
+      if (saved() === 'system') apply('system', { animate: true, persist: false });
+    }
+    if (systemQuery.addEventListener) systemQuery.addEventListener('change', onSystemChange);
+    else if (systemQuery.addListener) systemQuery.addListener(onSystemChange);
+
+    apply(saved(), { persist: false });
+
+    return { apply };
+  })();
+
+  document.querySelectorAll('[data-theme-choice]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      Theme.apply(btn.dataset.themeChoice, { animate: true });
+      Sound.play('theme');
     });
   });
-
-  // Initialize Theme on Page Load
-  applyTheme(getStoredTheme());
 
   /* ---------- Mobile Menu ---------- */
   const overlay = document.getElementById('mobile-overlay');
@@ -161,15 +224,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function openMenu() {
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    Sound.play('open');
   }
-  function closeMenu() {
+  function closeMenu(silent) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
+    if (silent !== true) Sound.play('close');
   }
 
   if (openBtn) openBtn.addEventListener('click', openMenu);
-  if (closeBtn) closeBtn.addEventListener('click', closeMenu);
-  overlay?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+  if (closeBtn) closeBtn.addEventListener('click', () => closeMenu());
+  // Links already make the click sound, so closing from a link stays silent.
+  overlay?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu(true)));
 
   /* ---------- Smooth Scroll ---------- */
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
@@ -221,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(temp);
         copyBtn.textContent = 'COPIED ✓';
       }
+      Sound.play('success');
       copyBtn.classList.add('copied');
       setTimeout(() => {
         copyBtn.textContent = original;
@@ -229,82 +296,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ---------- ColorBends WebGL Canvas ---------- */
+  /* ---------- Profile photo fallback ----------
+     If profile.jpg is missing or the filename's capitalisation doesn't match
+     (GitHub Pages is case-sensitive), show a monogram instead of a broken icon. */
   (() => {
-    const canvas = document.getElementById('color-bends-canvas');
-    if (!canvas || typeof THREE === 'undefined') return;
+    const img = document.querySelector('.dithered-portrait');
+    if (!img) return;
+    const fallback = () => {
+      const box = img.parentElement;
+      img.remove();
+      const f = document.createElement('div');
+      f.className = 'portrait-fallback';
+      f.setAttribute('role', 'img');
+      f.setAttribute('aria-label', 'Rain Regencia');
+      f.textContent = 'RR';
+      box.appendChild(f);
+    };
+    if (img.complete && img.naturalWidth === 0) fallback();
+    else img.addEventListener('error', fallback, { once: true });
+  })();
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  /* ---------- Side Rays background (React Bits) ----------
+     Mounted by siderays.js. Re-tints itself on theme change (see the
+     "themechange" event from the Theme controller).
+     Tweak the look here: colors, origin, intensity, spread, density, speed... */
+  (() => {
+    const host = document.getElementById('rays-bg');
+    if (!host || !window.SideRays) return;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: new THREE.Color('#A855F7') },
-        uSpeed: { value: 0.2 },
-        uFrequency: { value: 1.0 },
-        uNoise: { value: 0.15 },
-        uBandWidth: { value: 0.14 },
-        uIntensity: { value: 1.3 },
-        uFadeTop: { value: 0.75 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float uTime;
-        uniform vec3 uColor;
-        uniform float uSpeed;
-        uniform float uFrequency;
-        uniform float uNoise;
-        uniform float uBandWidth;
-        uniform float uIntensity;
-        uniform float uFadeTop;
-        varying vec2 vUv;
+    const base = {
+      origin: 'top-right',   // top-right | top-left | bottom-right | bottom-left | right | left
+      blend: 0.55,
+      speed: 1.6,
+      intensity: 2,          // lower this if you want the beams subtler
+      spread: 2,
+      density: 5,
+      sharpness: 0.5,
+      falloff: 1.8,
+      glow: 1,
+      dust: 0.25,
+      intro: true,
+      followMouse: !coarse,  // beams lean toward the cursor on desktop only
+      mouseInfluence: 0.5,
+      maxFps: 30,
+      maxDevicePixelRatio: coarse ? 1.25 : 1.5
+    };
 
-        float rand(vec2 n) { 
-          return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-        }
+    const looks = {
+      dark:  { ...base, rayColor1: '#00f0ff', rayColor2: '#4f7cff', lightMode: false, opacity: 1 },
+      light: { ...base, rayColor1: '#00707c', rayColor2: '#3b5bdb', lightMode: true,  opacity: 1 }
+    };
 
-        void main() {
-          vec2 st = vec2(vUv.y, 1.0 - vUv.x);
-          float t = uTime * uSpeed;
-          float wave = sin(st.x * uFrequency * 6.28318 + t) * uBandWidth;
-          float noiseVal = (rand(st + vec2(t)) - 0.5) * uNoise;
-          
-          float dist = abs(st.y - 0.5 + wave + noiseVal);
-          float bend = smoothstep(uBandWidth, 0.0, dist) * uIntensity;
-          
-          float fade = smoothstep(1.0, 1.0 - uFadeTop, vUv.y);
-          vec3 finalColor = uColor * bend * fade;
+    const currentLook = () =>
+      document.documentElement.getAttribute('data-theme') === 'light' ? looks.light : looks.dark;
 
-          gl_FragColor = vec4(finalColor, bend * fade * 0.85);
-        }
-      `,
-      transparent: true
-    });
+    const bg = window.SideRays.create(host, currentLook());
+    if (!bg.supported) { host.remove(); return; } // no WebGL2: plain themed page remains
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-
-    function animate(time) {
-      material.uniforms.uTime.value = time * 0.001;
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    document.addEventListener('themechange', (e) => {
+      bg.update(e.detail.theme === 'light' ? looks.light : looks.dark);
     });
   })();
 });

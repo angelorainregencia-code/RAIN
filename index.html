@@ -7,6 +7,18 @@
   <link rel="icon" type="image/png" href="studio-systems-logo.png">
   <meta name="description" content="Rain Regencia — Software Engineer, Founder of RA!N Systems &amp; Studio. Building high-performance technical systems and digital brands.">
   <meta name="color-scheme" content="dark light">
+  <script>
+    /* Runs before first paint so the saved theme applies with no flash. */
+    (function () {
+      var theme = 'dark';
+      try {
+        var saved = localStorage.getItem('site-theme') || 'system';
+        if (saved === 'light') theme = 'light';
+        else if (saved === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches) theme = 'light';
+      } catch (e) {}
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,46 +26,46 @@
 </head>
 <body>
 
-  <!-- Background Shader Canvas -->
-  <canvas id="color-bends-canvas"></canvas>
+  <!-- Background: React Bits "Topography" (WebGL2, mounted by script.js) -->
+  <div id="rays-bg" class="rays-container" aria-hidden="true"></div>
 
   <!-- Status Bar -->
   <header class="status-bar">
     <div class="wrap">
       <div class="status-live">
         <span class="pulse"></span>
-        SYSTEMS OPERATIONAL <strong>/</strong> AVAILABLE FOR COLLABS
+        <span>SYSTEMS OPERATIONAL <strong>/</strong> AVAILABLE FOR COLLABS</span>
       </div>
 
-      <nav class="header-links">
-        <a href="https://github.com/angelorainregencia-code" target="_blank" rel="noopener">github ↗</a>
-        <a href="https://www.linkedin.com/in/angelo-rain-regencia-142ab0241/" target="_blank" rel="noopener">linkedin ↗</a>
-        <a href="https://www.facebook.com/rain.regencia.2024" target="_blank" rel="noopener">facebook ↗</a>
-        <a href="#about">about ↗</a>
-        <a href="#contact">contact ↗</a>
+      <div class="header-right">
+        <nav class="header-links" aria-label="Social links">
+          <a href="https://github.com/angelorainregencia-code" target="_blank" rel="noopener">github ↗</a>
+          <a href="https://www.linkedin.com/in/angelo-rain-regencia-142ab0241/" target="_blank" rel="noopener">linkedin ↗</a>
+          <a href="https://www.facebook.com/rain.regencia.2024" target="_blank" rel="noopener">facebook ↗</a>
+          <a href="#contact">contact ↗</a>
+        </nav>
 
-        <!-- Controls Group: Theme Switcher Pill + Sound Toggle Button -->
-        <div class="controls-group">
-          <div class="theme-switcher-pill" role="radiogroup" aria-label="Theme Preference">
-            <button class="theme-opt" data-theme="system" title="System Preference" aria-label="System Preference">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <div class="control-cluster">
+          <div class="theme-toggle-group" role="group" aria-label="Color theme">
+            <button class="theme-btn" type="button" data-theme-choice="system" aria-label="Use system theme" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>
             </button>
-            <button class="theme-opt" data-theme="light" title="Light Mode" aria-label="Light Mode">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <button class="theme-btn" type="button" data-theme-choice="light" aria-label="Use light theme" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
             </button>
-            <button class="theme-opt" data-theme="dark" title="Dark Mode" aria-label="Dark Mode">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <button class="theme-btn" type="button" data-theme-choice="dark" aria-label="Use dark theme" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
             </button>
           </div>
 
-          <button class="sound-toggle-btn" id="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
-            <svg class="sound-icon-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-            <svg class="sound-icon-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <button class="sound-toggle-btn" type="button" aria-label="Mute interface sounds" aria-pressed="false">
+            <svg class="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+            <svg class="icon-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>
           </button>
         </div>
-      </nav>
 
-      <button class="menu-btn" id="menu-open" type="button" aria-label="Open menu">MENU</button>
+        <button class="menu-btn" id="menu-open" type="button" aria-label="Open menu">MENU</button>
+      </div>
     </div>
   </header>
 
@@ -61,35 +73,35 @@
   <div class="mobile-overlay" id="mobile-overlay">
     <div class="mobile-overlay-top">
       <span class="mono-label">NAVIGATION</span>
+      <button class="menu-btn" id="menu-close" type="button" aria-label="Close menu">CLOSE</button>
+    </div>
+    <nav class="mobile-nav" aria-label="Sections">
+      <a href="#projects">01 // Selected Work</a>
+      <a href="#skills">02 // Skills</a>
+      <a href="#studio">03 // Studio</a>
+      <a href="#stack">04 // Stack</a>
+      <a href="#contact">05 // Contact</a>
+    </nav>
 
-      <div class="controls-group">
-        <div class="theme-switcher-pill" role="radiogroup">
-          <button class="theme-opt" data-theme="system" aria-label="System Preference">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </button>
-          <button class="theme-opt" data-theme="light" aria-label="Light Mode">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
-          </button>
-          <button class="theme-opt" data-theme="dark" aria-label="Dark Mode">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          </button>
-        </div>
-
-        <button class="sound-toggle-btn sound-toggle-mobile" aria-label="Toggle Sound Effects">
-          <svg class="sound-icon-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-          <svg class="sound-icon-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    <div class="control-cluster control-cluster--mobile">
+      <div class="theme-toggle-group" role="group" aria-label="Color theme">
+        <button class="theme-btn" type="button" data-theme-choice="system" aria-label="Use system theme" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>
+        </button>
+        <button class="theme-btn" type="button" data-theme-choice="light" aria-label="Use light theme" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button class="theme-btn" type="button" data-theme-choice="dark" aria-label="Use dark theme" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
         </button>
       </div>
 
-      <button class="menu-btn" id="menu-close" type="button" aria-label="Close menu">CLOSE</button>
+      <button class="sound-toggle-btn" type="button" aria-label="Mute interface sounds" aria-pressed="false">
+        <svg class="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+        <svg class="icon-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>
+      </button>
     </div>
 
-    <nav class="mobile-nav">
-      <a href="#projects">01 // Selected Work</a>
-      <a href="#stack">02 // Stack</a>
-      <a href="#about">03 // Behind Studio</a>
-      <a href="#contact">04 // Contact</a>
-    </nav>
     <div class="mobile-nav" style="margin-top: -1rem;">
       <a href="https://github.com/angelorainregencia-code" target="_blank" rel="noopener">github ↗</a>
       <a href="https://www.linkedin.com/in/angelo-rain-regencia-142ab0241/" target="_blank" rel="noopener">linkedin ↗</a>
@@ -100,10 +112,10 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="wrap hero-wrap">
-      
+
       <div class="hero-portrait-col reveal">
         <div class="portrait-container">
-          <img src="profile.jpg" alt="Rain Regencia" class="dithered-portrait">
+          <img src="asset/images/profile.jpg" alt="Rain Regencia" class="dithered-portrait">
         </div>
       </div>
 
@@ -111,7 +123,7 @@
         <h1 class="hero-title-large">Rain Regencia</h1>
 
         <p class="hero-sub">
-          I'm a <strong>Managing Director and Software Engineer</strong> based in the Philippines — Founder of <b>RA!N Systems &amp; Studio</b>. Engineering AI-driven civic platforms and digital brand identity systems.
+          I'm a <strong>Software Engineer and Managing Director</strong> based in the Philippines — Founder of <b>RA!N Systems &amp; Studio</b>. Engineering AI-driven civic platforms and digital brand identity systems.
         </p>
 
         <div class="hero-social-links">
@@ -167,7 +179,7 @@
       <div class="section-head reveal">
         <div class="section-head-top">
           <div class="index-tag">01 // FEATURED SYSTEMS &amp; DIVISIONS</div>
-          <div class="section-counter">01 / 04</div>
+          <div class="section-counter">01 / 03</div>
         </div>
         <p class="section-subtext">Hands-on operator output — products, platforms, and tooling forged for real users.</p>
       </div>
@@ -175,10 +187,10 @@
       <div class="projects-grid-bossrod">
 
         <!-- Card 1: INIT.AI -->
-        <a href="https://www.initai.site" target="_blank" rel="noopener" class="card-bossrod reveal">
+        <a href="https://init-ai-ebon.vercel.app/login" target="_blank" rel="noopener" class="card-bossrod reveal">
           <div class="card-bossrod-top">
             <div class="card-logo-box">
-              <img src="init-ai-logo.png" alt="INIT.AI Logo" class="card-logo-img">
+              <img src="asset/images/init-ai-logo.png" alt="INIT.AI Logo" class="card-logo-img">
             </div>
             <span class="card-ext-icon">↗</span>
           </div>
@@ -198,7 +210,7 @@
         <a href="#contact" class="card-bossrod reveal">
           <div class="card-bossrod-top">
             <div class="card-logo-box">
-              <img src="studio-systems-logo.png" alt="RA!N Systems & Studio Logo" class="card-logo-img">
+              <img src="asset/images/studio-systems-logo.png" alt="RA!N Systems & Studio Logo" class="card-logo-img">
             </div>
             <span class="card-ext-icon">↗</span>
           </div>
@@ -218,7 +230,7 @@
         <a href="#contact" class="card-bossrod reveal">
           <div class="card-bossrod-top">
             <div class="card-logo-box">
-              <img src="frames-logo.png" alt="FRAMES Productions Logo" class="card-logo-img">
+              <img src="asset/images/frames-logo.png" alt="FRAMES Productions Logo" class="card-logo-img">
             </div>
             <span class="card-ext-icon">↗</span>
           </div>
@@ -238,14 +250,126 @@
     </div>
   </section>
 
+  <!-- Core Skills -->
+  <section class="section" id="skills">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-head-top">
+          <div class="index-tag">02 // CORE SKILLS &amp; COMPETENCIES</div>
+          <div class="section-counter">06 DISCIPLINES</div>
+        </div>
+        <p class="section-subtext">What I can build, run, and ship — grouped by discipline.</p>
+      </div>
+
+      <div class="skills-grid">
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">Full-Stack Development</h3>
+          <p class="skill-desc">Web applications built end to end, from the database to the interface.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Web Applications</span>
+            <span class="tag-pill">Software Architecture</span>
+            <span class="tag-pill">Relational Databases</span>
+            <span class="tag-pill">Integrative Programming</span>
+          </div>
+        </article>
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">AI &amp; Machine Learning</h3>
+          <p class="skill-desc">Applying models and data to real civic and product problems.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Machine Learning</span>
+            <span class="tag-pill">Prompt Engineering</span>
+            <span class="tag-pill">AI-Assisted Development</span>
+            <span class="tag-pill">Satellite &amp; GIS Data</span>
+          </div>
+        </article>
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">Systems &amp; Networking</h3>
+          <p class="skill-desc">Network setup and administration, planned and tested before deployment.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Network Administration</span>
+            <span class="tag-pill">Cisco Packet Tracer</span>
+            <span class="tag-pill">Git &amp; GitHub</span>
+          </div>
+        </article>
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">Brand &amp; Visual Design</h3>
+          <p class="skill-desc">Identity systems and interfaces that look and run as one product.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Brand Identity</span>
+            <span class="tag-pill">UI/UX Design</span>
+            <span class="tag-pill">Visual Engineering</span>
+          </div>
+        </article>
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">Product &amp; Leadership</h3>
+          <p class="skill-desc">Founding and running a multi-division studio for startups and MSMEs.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Founding &amp; Management</span>
+            <span class="tag-pill">Product Direction</span>
+            <span class="tag-pill">Client Delivery</span>
+          </div>
+        </article>
+
+        <article class="skill-card reveal">
+          <h3 class="skill-title">Multimedia Production</h3>
+          <p class="skill-desc">Content from concept to final cut, led through FRAMES Productions.</p>
+          <div class="card-tags">
+            <span class="tag-pill">Content Creation</span>
+            <span class="tag-pill">Cinematography</span>
+            <span class="tag-pill">Social Media Strategy</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Behind the System & Studio -->
+  <section class="section" id="studio">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-head-top">
+          <div class="index-tag">03 // BEHIND THE SYSTEM &amp; STUDIO</div>
+          <div class="section-counter">03 / 05</div>
+        </div>
+        <p class="section-subtext">The operator vision — bridging software architecture and visual engineering.</p>
+      </div>
+
+      <div class="studio-grid">
+        <div class="studio-photo reveal">
+          <img src="asset/images/rain-systems-studio.jpg" alt="The RA!N Systems &amp; Studio team on stage holding their awards" loading="lazy">
+        </div>
+
+        <div class="studio-copy reveal">
+          <h2 class="studio-title">Engineering Systems with Purpose</h2>
+          <p class="studio-text">
+            RA!N Systems &amp; Studio was founded on a singular directive: to fuse robust technical
+            execution with high-performance digital brand identity systems. Beyond code syntax and
+            network topographies, every project is built to solve operational challenges for civic
+            initiatives, startups, and MSMEs—giving emerging platforms the technical foundation to
+            scale cleanly.
+          </p>
+          <div class="card-tags">
+            <span class="tag-pill">FOUNDER &amp; CEO</span>
+            <span class="tag-pill">SYSTEMS ARCHITECTURE</span>
+            <span class="tag-pill">BRAND IDENTITY</span>
+            <span class="tag-pill">CIVIC TECH</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Technical Stack -->
   <section class="section" id="stack">
     <div class="wrap">
       <div class="section-head reveal">
-        <div class="section-head-top">
-          <div class="index-tag">02 // TECHNICAL STACK &amp; ARCHITECTURE</div>
-          <div class="section-counter">02 / 04</div>
-        </div>
+        <div class="index-tag">04 // TECHNICAL STACK &amp; ARCHITECTURE</div>
         <h2 class="section-title">Systems Toolkit</h2>
       </div>
 
@@ -292,49 +416,11 @@
     </div>
   </section>
 
-  <!-- Section 03: Behind the Systems & Studio -->
-  <section class="section" id="about">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <div class="section-head-top">
-          <div class="index-tag">03 // BEHIND THE SYSTEM &amp; STUDIO</div>
-          <div class="section-counter">03 / 04</div>
-        </div>
-        <p class="section-subtext">The operator vision — bridging software architecture and visual engineering.</p>
-      </div>
-
-      <div class="about-grid reveal">
-        <div class="about-image-col">
-          <div class="about-img-wrapper">
-            <img src="rain-systems-studio.jpg" alt="Rain Regencia — Founder of RA!N Systems & Studio" class="about-img">
-          </div>
-        </div>
-
-        <div class="about-text-col">
-          <h2 class="about-heading">Engineering Systems with Purpose</h2>
-          <p class="about-caption">
-            RA!N Systems &amp; Studio was founded on a singular directive: to fuse robust technical execution with high-performance digital brand identity systems. Beyond code syntax and network topographies, every project is built to solve operational challenges for civic initiatives, startups, and MSMEs—giving emerging platforms the technical foundation to scale cleanly.
-          </p>
-
-          <div class="about-meta-pills">
-            <span class="tag-pill">FOUNDER &amp; CEO</span>
-            <span class="tag-pill">SYSTEMS ARCHITECTURE</span>
-            <span class="tag-pill">BRAND IDENTITY</span>
-            <span class="tag-pill">CIVIC TECH</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Contact Section -->
   <section class="section" id="contact" style="border-bottom: none;">
     <div class="wrap">
       <div class="section-head reveal">
-        <div class="section-head-top">
-          <div class="index-tag">04 // INITIATE CONTACT</div>
-          <div class="section-counter">04 / 04</div>
-        </div>
+        <div class="index-tag">05 // INITIATE CONTACT</div>
         <h2 class="section-title">Let's Build Something</h2>
       </div>
 
@@ -373,8 +459,8 @@
     </div>
   </footer>
 
-  <!-- WebGL Library and Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Scripts -->
+  <script src="siderays.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
