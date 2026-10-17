@@ -216,26 +216,79 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ---------- Mobile Menu ---------- */
+  /* ---------- Mobile Menu ----------
+     Opens a full-screen overlay. Closes with CLOSE, Escape, a link tap, or when
+     the window grows to desktop width. Focus moves into the menu and returns to
+     MENU afterwards, Tab stays inside while it is open, and the section you are
+     reading is highlighted. */
   const overlay = document.getElementById('mobile-overlay');
   const openBtn = document.getElementById('menu-open');
   const closeBtn = document.getElementById('menu-close');
+  const menuLinks = overlay ? Array.from(overlay.querySelectorAll('.mobile-nav a')) : [];
+  const desktopQuery = window.matchMedia('(min-width: 1080px)');
+
+  const menuIsOpen = () => !!overlay && overlay.classList.contains('open');
+
+  function markCurrentSection() {
+    const middle = window.innerHeight / 2;
+    let current = null;
+    document.querySelectorAll('section[id]').forEach((sec) => {
+      const r = sec.getBoundingClientRect();
+      if (r.top <= middle && r.bottom > middle) current = sec.id;
+    });
+    menuLinks.forEach((a) => {
+      if (current && a.getAttribute('href') === '#' + current) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    });
+  }
 
   function openMenu() {
+    if (!overlay || menuIsOpen()) return;
+    markCurrentSection();
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (openBtn) openBtn.setAttribute('aria-expanded', 'true');
     Sound.play('open');
+    if (closeBtn) closeBtn.focus({ preventScroll: true });
   }
-  function closeMenu(silent) {
+
+  function closeMenu(silent, restoreFocus = true) {
+    if (!overlay || !menuIsOpen()) return;
     overlay.classList.remove('open');
     document.body.style.overflow = '';
+    if (openBtn) openBtn.setAttribute('aria-expanded', 'false');
     if (silent !== true) Sound.play('close');
+    if (restoreFocus && openBtn && overlay.contains(document.activeElement)) {
+      openBtn.focus({ preventScroll: true });
+    }
   }
 
   if (openBtn) openBtn.addEventListener('click', openMenu);
   if (closeBtn) closeBtn.addEventListener('click', () => closeMenu());
   // Links already make the click sound, so closing from a link stays silent.
-  overlay?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu(true)));
+  menuLinks.forEach((link) => link.addEventListener('click', () => closeMenu(true, false)));
+  overlay?.querySelectorAll('.mobile-social a').forEach((link) =>
+    link.addEventListener('click', () => closeMenu(true, false))
+  );
+
+  document.addEventListener('keydown', (e) => {
+    if (!menuIsOpen()) return;
+    if (e.key === 'Escape') {
+      closeMenu();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(overlay.querySelectorAll('a[href], button:not([disabled])'));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  const onDesktop = () => { if (desktopQuery.matches) closeMenu(true, false); };
+  if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', onDesktop);
+  else if (desktopQuery.addListener) desktopQuery.addListener(onDesktop);
 
   /* ---------- Smooth Scroll ---------- */
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
